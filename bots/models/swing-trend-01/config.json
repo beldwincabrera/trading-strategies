@@ -1,0 +1,23 @@
+{
+  "member_id": "TTC-SWING-TREND-01",
+  "model_version": "0.1.0-research",
+  "grove": "Trend",
+  "bar_interval": "1h",
+  "forecast_horizon_bars": 10,
+  "atr_period": 14,
+  "up_barrier_atr": 1.5,
+  "down_barrier_atr": 1.0,
+  "minimum_direction_probability": 0.55,
+  "minimum_probability_edge": 0.10,
+  "train_fraction": 0.60,
+  "calibration_fraction": 0.20,
+  "random_state": 42,
+  "forest": {
+    "n_estimators": 200,
+    "max_depth": 6,
+    "min_samples_leaf": 20,
+    "max_features": "sqrt",
+    "class_weight": "balanced_subsample",
+    "n_jobs": -1
+  }
+}
