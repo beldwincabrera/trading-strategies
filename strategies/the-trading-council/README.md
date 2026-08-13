@@ -1080,7 +1080,533 @@ The initial TTC research program should answer:
 
 ---
 
-## 30. Final Strategy Statement
+## 30. What the TTC Model Is
+
+The term **TTC model** refers to the complete decision system, not one machine-learning artifact. TTC is a governed ensemble made of several model types and deterministic control layers.
+
+| Layer | Form | Primary purpose |
+|---|---|---|
+| Market data model | Point-in-time data contract | Represents the market exactly as it was knowable at the decision time |
+| Feature pipeline | Deterministic calculations | Converts raw market data into stable measurements |
+| Member models | Specialized quantitative classifiers or estimators | Produce independent long, short, or abstain ballots |
+| Ranger model | Regime classifier | Identifies the market environment and voter eligibility |
+| Council model | Weighted ensemble | Aggregates ballots and penalizes dependent opinions |
+| Calibration model | Probability mapping | Converts model scores into observed success probabilities |
+| Conviction model | Economic decision function | Determines whether the opportunity has sufficient net expectancy |
+| Guardian policy | Deterministic rules engine | Enforces portfolio and operational risk limits |
+| Execution policy | Deterministic state machine | Implements approved trades within price and order constraints |
+
+The recommended architecture deliberately separates prediction from authorization. Machine-learning models may estimate what is likely to happen; deterministic policies decide whether capital may be committed.
+
+```mermaid
+flowchart TD
+    A["Raw point-in-time data"] --> B["Validated market snapshot"]
+    B --> C["Shared feature pipeline"]
+    C --> D["Ranger model"]
+    C --> E["Member models"]
+    D --> E
+    E --> F["Council ensemble"]
+    F --> G["Probability calibration"]
+    G --> H["Conviction and expectancy"]
+    H --> I["Guardian rules"]
+    I --> J["Execution policy"]
+```
+
+### 30.1 What a Member is
+
+A Member is a logical quantitative voting unit with one narrow trading mandate. It is best understood as a specialized bot backed by a statistical or machine-learning model. It is not an autonomous conversational agent.
+
+A Member may internally use:
+
+- A single decision tree.
+- A small random forest.
+- A gradient-boosted tree model.
+- A logistic regression model.
+- A rules-based statistical model.
+- A calibrated combination of related models.
+
+One Member does not necessarily equal one literal tree. A Member represents one governed trading thesis. For example, `SwingTrend-07` might contain a small forest trained only on medium-term trend evidence. Its internal trees collectively produce one Member ballot.
+
+This prevents TTC from falsely treating hundreds of highly related trees from one algorithm as hundreds of independent market opinions.
+
+### 30.2 What a Member is not
+
+A Member does not:
+
+- Place orders.
+- Decide portfolio exposure.
+- Change its own mandate.
+- Communicate with other Members before voting.
+- Search the internet during normal inference.
+- Create new indicators during a Council session.
+- Override the Ranger, Guardian, or Executor.
+- Receive credit merely for agreeing with the majority.
+
+The Member evaluates its assigned evidence and submits a ballot. Its authority ends there.
+
+---
+
+## 31. What the Model Is Comprised Of
+
+### 31.1 Raw market inputs
+
+The first Swing Council should use a controlled set of inputs:
+
+- Adjusted and unadjusted OHLCV bars.
+- Intraday and daily returns.
+- Bid-ask spread or a defensible spread estimate.
+- Realized and implied volatility where licensed and available.
+- Broad-market and sector returns.
+- Market breadth.
+- Treasury yields and bond-market context.
+- U.S. dollar and volatility-index context.
+- Trading calendar and scheduled-event flags.
+- Current portfolio exposure and available risk budget.
+
+Raw data is never sent directly to every model independently. TTC first constructs one immutable market snapshot so that all Members evaluate the same timestamp and information set.
+
+### 31.2 Shared features
+
+The feature pipeline derives measurements such as:
+
+| Feature family | Examples | Intended information |
+|---|---|---|
+| Trend | Price slopes, moving-average relationships, directional persistence | Whether price is moving directionally |
+| Momentum | Rate of change, acceleration, relative strength | Whether movement is strengthening or weakening |
+| Mean reversion | Standardized deviation, VWAP distance, range location | Whether price is unusually extended |
+| Structure | Swing levels, breakout distance, gaps, pivot relationships | Where price sits relative to meaningful levels |
+| Volatility | Realized range, volatility percentile, compression and expansion | Expected movement and regime instability |
+| Volume | Relative volume, volume trend, price-volume confirmation | Participation behind the price move |
+| Breadth | Participation across constituents and sectors | Whether index movement is broadly supported |
+| Intermarket | Rates, bonds, dollar, volatility, correlated indexes | Whether related markets confirm the thesis |
+| Liquidity | Spread, turnover, bar completeness | Whether the opportunity is executable |
+
+Features are versioned. A Member is approved against a specific feature definition and cannot silently consume a changed calculation.
+
+### 31.3 Specialized Member models
+
+Members are organized into groves. Members within a grove share an economic theme but should differ in training samples, feature subsets, decision boundaries, or regime specialization.
+
+For the initial 40-Member Swing Council, the recommended allocation is:
+
+| Grove | Initial Members | Illustrative model role |
+|---|---:|---|
+| Trend | 5 | Continuation across short, medium, and long lookbacks |
+| Momentum | 5 | Directional acceleration and relative strength |
+| Mean Reversion | 4 | Statistical extension and return toward balance |
+| Price Structure | 4 | Breakout, rejection, gap, and level behavior |
+| Volatility | 4 | Compression, expansion, and volatility transition |
+| Volume and Liquidity | 4 | Participation and execution-quality confirmation |
+| Breadth | 3 | Index and sector participation |
+| Intermarket | 3 | Rates, volatility, dollar, bonds, and index confirmation |
+| Regime Specialists | 5 | Bull, bear, range, stressed, and recovery environments |
+| Cross-Sectional | 3 | Instrument strength versus benchmark and sector |
+| **Total** | **40** |  |
+
+The mature Council may grow toward 100 Members, but only when new Members add independent out-of-sample value.
+
+### 31.4 Ranger regime model
+
+The Ranger estimates the probability of the current market being in each approved state. It uses market-level evidence rather than the trade outcome being predicted by individual Members.
+
+Its output may resemble:
+
+| Regime | Probability |
+|---|---:|
+| Bull trend, normal volatility | 58% |
+| Range, normal volatility | 22% |
+| Bull trend, elevated volatility | 12% |
+| Transition or uncertain | 8% |
+
+The Ranger does not need to force one absolute label. Probability-weighted eligibility prevents abrupt behavior when the market sits near a regime boundary.
+
+### 31.5 Council aggregation model
+
+The Council receives one ballot from each eligible Member and calculates:
+
+- Raw long, short, and abstain shares.
+- Reliability-weighted agreement.
+- Regime-adjusted agreement.
+- Grove concentration.
+- Pairwise error dependence.
+- Effective independent Member count.
+- Evidence-family breadth.
+
+The Council’s main purpose is not to maximize agreement. Its purpose is to determine whether agreement represents several independent sources of evidence.
+
+### 31.6 Calibration and Conviction models
+
+Calibration answers:
+
+> When TTC previously generated predictions like this, how often did the defined favorable outcome actually occur?
+
+Conviction then combines that probability with reward, loss, costs, uncertainty, and regime compatibility. A high vote share with poor calibration or negative expectancy is rejected.
+
+### 31.7 Guardian and Executor
+
+The Guardian and Executor are not learned trading models in the initial design. They are deterministic policies because their behavior must remain predictable, testable, and auditable.
+
+The Guardian converts an approved opportunity into a maximum allowable risk allocation. The Executor converts that allocation into broker instructions while managing order state, fills, cancellations, and reconciliation.
+
+---
+
+## 32. How TTC Models Are Built
+
+### 32.1 Define the mandate first
+
+Model development begins with an economic question, not an algorithm. Every Member mandate specifies:
+
+- Instrument universe.
+- Holding horizon.
+- Eligible regimes.
+- Permitted feature families.
+- Target outcome.
+- Profit and adverse barriers.
+- Time limit.
+- Trading-cost assumption.
+- Conditions that require abstention.
+
+Example mandate:
+
+> Determine whether SPY has positive long or short expectancy over the next two to ten sessions using medium-term trend evidence during directional, normally liquid regimes.
+
+### 32.2 Create time-bound labels
+
+Historical observations are labeled according to which economically meaningful outcome occurred first:
+
+- Upward barrier reached: candidate LONG outcome.
+- Downward barrier reached: candidate SHORT outcome.
+- Neither reached before expiration: NO TRADE outcome.
+
+Barriers are volatility-aware and include estimated costs. This avoids training the model to predict economically meaningless next-bar color.
+
+### 32.3 Build the point-in-time dataset
+
+For each historical decision timestamp, TTC reconstructs only information that was available at that time. The dataset includes:
+
+- Immutable market snapshot.
+- Approved feature version.
+- Ranger-compatible regime information.
+- Time-bound outcome label.
+- Instrument and session metadata.
+
+Observations with missing, corrected, or unverifiable inputs are excluded or explicitly marked according to the data policy.
+
+### 32.4 Train diverse candidates
+
+Several candidate Members are trained for each mandate using controlled differences:
+
+- Different feature subsets.
+- Different bootstrap samples.
+- Different training windows.
+- Different tree depth and regularization.
+- Different regime focus.
+- Different probability thresholds.
+- Different random seeds.
+
+Diversity is intentional, but randomness alone does not earn admission. Every candidate must demonstrate a stable role.
+
+### 32.5 Validate chronologically
+
+Candidate Members are evaluated through walk-forward validation with purging and embargo where labels overlap. Selection considers:
+
+- Net expectancy after costs.
+- Maximum drawdown contribution.
+- Calibration.
+- Stability across periods and regimes.
+- Error correlation with admitted Members.
+- Value of abstention.
+- Sensitivity to moderate parameter changes.
+
+The Member with the highest historical return is not automatically selected. A slightly weaker Member may be more valuable if its errors are independent and it protects the Council in a difficult regime.
+
+### 32.6 Calibrate probabilities
+
+Raw model scores are calibrated using data not used to fit the underlying Member. Calibration maps model confidence to an observed out-of-sample frequency.
+
+For example, if predictions assigned approximately 70% confidence succeed only 58% of the time, TTC must use the calibrated probability near 58%, not the raw 70% score.
+
+### 32.7 Admit Members through probation
+
+Selected Members enter shadow probation:
+
+- Their ballots are generated in real time.
+- They do not influence live capital.
+- Their data health, latency, calibration, and contribution are monitored.
+- They become voting Members only after meeting forward-observation requirements.
+
+### 32.8 Freeze and version the release
+
+An approved release freezes:
+
+- Member roster and model artifacts.
+- Feature definitions.
+- Ranger version.
+- Calibration mappings.
+- Consensus weights and limits.
+- Conviction thresholds.
+- Guardian policies.
+- Instrument and horizon scope.
+
+Retraining produces a candidate version; it never silently replaces the active release.
+
+```mermaid
+flowchart TD
+    A["Define economic mandate"] --> B["Build point-in-time labels"]
+    B --> C["Create approved features"]
+    C --> D["Train diverse candidates"]
+    D --> E["Walk-forward validation"]
+    E --> F{"Stable and additive?"}
+    F -->|No| G["Reject or redesign"]
+    F -->|Yes| H["Calibrate probabilities"]
+    H --> I["Shadow probation"]
+    I --> J{"Forward criteria pass?"}
+    J -->|No| G
+    J -->|Yes| K["Version and admit"]
+```
+
+---
+
+## 33. How TTC Works During a Live Decision
+
+At each scheduled decision time:
+
+1. **Ingest:** TTC receives market, reference, portfolio, and event data.
+2. **Validate:** It rejects stale, incomplete, duplicated, or inconsistent inputs.
+3. **Snapshot:** It freezes one point-in-time input package for the session.
+4. **Calculate features:** Shared measurements are calculated once and reused.
+5. **Classify regime:** The Ranger estimates market-state probabilities.
+6. **Determine eligibility:** Members outside their approved regime or data domain are excluded.
+7. **Generate ballots:** Eligible Members independently submit long, short, or abstain opinions.
+8. **Aggregate:** The Council weights ballots and penalizes correlation and grove concentration.
+9. **Calibrate:** Raw agreement is mapped to realistic historical probabilities.
+10. **Calculate expectancy:** Reward, loss, trading costs, and uncertainty are combined.
+11. **Assign conviction:** TTC assigns No Edge, Watch, Qualified, Strong, or Exceptional.
+12. **Authorize risk:** The Guardian approves, reduces, or rejects exposure.
+13. **Execute:** The Executor places orders only within the authorization envelope.
+14. **Monitor:** Position, market state, model health, and order state are tracked.
+15. **Record:** Every input, vote, rule, decision, and outcome is stored for replay.
+
+```mermaid
+sequenceDiagram
+    participant Data as Data Pipeline
+    participant Ranger as Ranger
+    participant Members as Members
+    participant Council as Council
+    participant Guardian as Guardian
+    participant Executor as Executor
+
+    Data->>Ranger: Validated snapshot
+    Ranger->>Members: Regime and eligibility
+    Members->>Council: Independent ballots
+    Council->>Council: De-correlate and calibrate
+    Council->>Guardian: Direction, expectancy, conviction
+    Guardian-->>Council: Approve, reduce, or reject
+    Guardian->>Executor: Risk envelope if approved
+    Executor-->>Data: Orders, fills, and position state
+```
+
+### 33.1 Example Council session
+
+Assume TTC evaluates SPY for a Swing Council decision:
+
+| Session item | Result |
+|---|---:|
+| Configured Members | 40 |
+| Eligible Members | 34 |
+| Long ballots | 24 |
+| Short ballots | 5 |
+| Abstain ballots | 5 |
+| Raw directional long consensus | 82.8% |
+| Effective independent Members | 17.6 |
+| Correlation-adjusted consensus | 74.5% |
+| Calibrated success probability | 62.0% |
+| Estimated average favorable move | 1.7% |
+| Estimated average adverse move | 1.0% |
+| Estimated total costs | 0.08% |
+| Conviction tier | Qualified |
+
+The Guardian may approve only a half-sized position because Qualified conviction carries a 0.50× multiplier. The position is smaller even though raw consensus appears high because correlation and calibration reveal less certainty.
+
+---
+
+## 34. Built-In Model Rules and Their Purpose
+
+TTC rules are divided into immutable safety principles, configurable strategy policies, and learned model behavior.
+
+### 34.1 Immutable safety principles
+
+These rules should not be optimized by machine learning:
+
+| Rule | Purpose |
+|---|---|
+| No future information | Prevent look-ahead leakage and false results |
+| Same mandate for all session voters | Ensure votes answer the same question |
+| Abstention is always available | Prevent forced low-quality trades |
+| Risk has veto authority | Prevent prediction confidence from overriding portfolio safety |
+| No Member places orders | Separate forecasting from capital authority |
+| Every decision is versioned | Make results reproducible and auditable |
+| Stale or incomplete data causes abstention | Prevent corrupted-input trading |
+| Every position addition is a new decision | Prevent uncontrolled averaging down |
+| Every forecast expires | Prevent execution of obsolete signals |
+| Production models cannot self-modify | Preserve release control and rollback |
+
+### 34.2 Configurable strategy policies
+
+These rules are selected through research and then frozen for each release:
+
+- Required effective consensus.
+- Minimum calibrated probability.
+- Minimum net expectancy.
+- Minimum number of eligible Members.
+- Required number of supporting groves.
+- Maximum influence from one grove.
+- Maximum Member weight.
+- Conviction-tier position multipliers.
+- Entry trigger and signal expiration.
+- Exit and time-stop policy.
+- Instrument and session restrictions.
+- Drawdown and concentration limits.
+
+Configurable does not mean discretionary. Changes require a new strategy version and validation.
+
+### 34.3 Learned behavior
+
+Member and Ranger models learn statistical relationships from historical training data, such as:
+
+- Which combinations of trend and volatility have historically favored continuation.
+- When a price extension has historically reverted.
+- Which breadth conditions confirm index movement.
+- Which intermarket states weaken or strengthen a signal.
+- When a Member should abstain because the predicted edge is insufficient.
+
+Learned behavior cannot override fixed policy. A model may recommend a trade; it cannot waive a drawdown stop or increase its own weight.
+
+### 34.4 Default operating rules for the initial Swing Council
+
+The following are research starting points and must be validated before live use:
+
+| Rule | Initial policy |
+|---|---|
+| Instrument universe | SPY and QQQ |
+| Decision interval | Completed hourly bars with daily context |
+| Holding horizon | 2–10 trading sessions |
+| Initial roster | 40 Members |
+| Minimum eligible Members | 24 |
+| Minimum supporting groves | 3, with at least 4 participating |
+| Maximum effective influence from one grove | 40% |
+| Below 60% effective consensus | No Edge / abstain |
+| 60–69% | Watch only |
+| 70–79% | Qualified; up to 0.50× base risk |
+| 80–89% | Strong; up to 1.00× base risk |
+| 90% or higher | Exceptional; up to 1.25× base risk after enhanced review |
+| Non-positive net expectancy | Always abstain |
+| Uncertain or unsupported regime | Reduce size, raise thresholds, or abstain |
+| Stale data or reconciliation failure | Freeze new orders |
+| New Member | Shadow probation before influence |
+
+These values are guardrails for the research program, not claims of optimality.
+
+---
+
+## 35. Programming Language and Technology Direction
+
+TTC should use a hybrid language strategy because model research and production trading have different strengths.
+
+### 35.1 Recommended language allocation
+
+| Responsibility | Recommended language or format | Reason |
+|---|---|---|
+| Quantitative research | Python | Strong statistical, machine-learning, and time-series ecosystem |
+| Model training and calibration | Python | Mature tree, calibration, validation, and explainability libraries |
+| Backtest research notebooks | Python initially | Fast experimentation and visualization |
+| Production orchestration | C# on .NET 8 | Strong typing, reliability, concurrency, observability, and alignment with the broader BeldInvest platform |
+| Live model inference | C#/.NET using ONNX-compatible artifacts where feasible | Keeps production execution controlled and avoids a Python dependency in the trading path |
+| Guardian and execution policies | C#/.NET | Deterministic behavior and strong state-management support |
+| Data and audit persistence | SQL | Durable, queryable decision and execution history |
+| Model interchange | ONNX where supported | Portable boundary between Python training and .NET inference |
+| Strategy documentation | Markdown and Mermaid | Version-controlled rules and understandable decision diagrams |
+
+### 35.2 Why not use only Python?
+
+Python is the best default for quantitative research, but a production trading system also needs durable state, broker reconciliation, concurrency control, failure recovery, and auditable business rules. C#/.NET is well suited to those responsibilities and aligns with the intended BeldInvest architecture.
+
+### 35.3 Why not use only C#?
+
+A .NET-only design is possible, but it would restrict the research ecosystem and slow experimentation with statistical validation, probability calibration, interpretability, and financial time-series tooling. The production system should not give up Python’s research advantages merely to maintain language uniformity.
+
+### 35.4 Recommended model boundary
+
+The preferred boundary is:
+
+1. Train and validate Member models in Python.
+2. Freeze the approved preprocessing and model versions.
+3. Export compatible models to ONNX or another controlled artifact format.
+4. Load and evaluate them inside the .NET inference service.
+5. Verify that Python and .NET produce equivalent results on a locked test dataset.
+6. Keep the Guardian and Executor entirely outside the exported model.
+
+Some research models may not export cleanly. Those models should remain outside the live path until they can be reproduced reliably or served behind a strictly controlled inference boundary. Operational convenience is not enough reason to accept irreproducible behavior.
+
+### 35.5 Role of large language models
+
+LLMs are optional and are not required for Council voting. They may support:
+
+- Human-readable decision explanations.
+- Research summaries.
+- Model-performance investigations.
+- Documentation and operational reporting.
+- Later interpretation of carefully controlled unstructured news inputs.
+
+LLMs should not:
+
+- Calculate market indicators.
+- Replace Member inference.
+- Enforce risk limits.
+- Reconcile positions.
+- Directly approve or transmit live orders.
+- Modify production rules autonomously.
+
+This keeps normal Council voting inexpensive, fast, reproducible, and backtestable.
+
+```mermaid
+flowchart LR
+    A["Python research and training"] --> B["Validated model artifact"]
+    B --> C["Equivalence tests"]
+    C --> D[".NET inference and orchestration"]
+    D --> E["C# Guardian and Executor"]
+    D --> F["Optional LLM explanation"]
+```
+
+---
+
+## 36. Model Purpose and Success Definition
+
+The purpose of TTC is not simply to predict whether the next price bar will be green or red. Its purpose is to identify a limited set of opportunities for which:
+
+- Multiple independent evidence families support the same direction.
+- The current regime is compatible with those signals.
+- The probability estimate is historically calibrated.
+- The expected reward exceeds the expected loss and all trading costs.
+- The portfolio has sufficient risk capacity.
+- The decision can be executed and audited reliably.
+
+TTC succeeds when it improves the quality and consistency of capital allocation. Success must be measured by:
+
+- Positive net expectancy after realistic costs.
+- Acceptable maximum drawdown.
+- Stable behavior across market regimes.
+- Reliable probability calibration.
+- Effective rejection of marginal opportunities.
+- Controlled portfolio concentration.
+- Operational correctness.
+- Transparent and reproducible decisions.
+
+TTC does not succeed merely because it reaches a high win rate, generates many signals, or produces confident votes. A Council that frequently abstains but selects higher-quality opportunities may be substantially better than an active Council with a superficially impressive hit rate.
+
+---
+
+## 37. Final Strategy Statement
 
 The Trading Council is not a collection of one hundred bots taking a popularity vote. It is a governed ensemble in which specialized Members provide distinct evidence, The Ranger determines environmental relevance, The Council measures effective agreement, The Conviction Engine verifies probability and economic edge, The Guardian controls portfolio risk, and The Executor implements only approved decisions.
 
@@ -1092,6 +1618,6 @@ This structure preserves the original concept—the crowd can outperform the gen
 
 ---
 
-## 31. Disclaimer
+## 38. Disclaimer
 
 This document defines a research and trading-system framework. It does not guarantee results and is not individualized investment advice. Historical and simulated performance cannot establish future profitability. Any live deployment requires independent validation, appropriate professional review, controlled capital limits, and acceptance that loss of capital is possible.
